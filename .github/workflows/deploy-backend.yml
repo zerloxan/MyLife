@@ -1,0 +1,70 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: mylife-backend
+  LAMBDA_FUNCTION: mylife-backend
+
+jobs:
+  deploy:
+    name: Build & deploy to Lambda
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write   # For OIDC authentication with AWS
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag and push Docker image
+        id: build
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
+          docker tag  $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $REGISTRY/$ECR_REPOSITORY:latest
+          docker push $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Update Lambda function image
+        run: |
+          aws lambda update-function-code \
+            --function-name $LAMBDA_FUNCTION \
+            --image-uri ${{ steps.build.outputs.image }} \
+            --region $AWS_REGION
+
+      - name: Wait for Lambda update to complete
+        run: |
+          aws lambda wait function-updated \
+            --function-name $LAMBDA_FUNCTION \
+            --region $AWS_REGION
+
+      - name: Smoke test
+        run: |
+          API_URL=$(aws apigatewayv2 get-apis --query "Items[?Name=='mylife-api'].ApiEndpoint" --output text)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/health")
+          if [ "$STATUS" != "200" ]; then
+            echo "Health check failed with status $STATUS"
+            exit 1
+          fi
+          echo "Health check passed"

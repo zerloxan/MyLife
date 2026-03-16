@@ -1,0 +1,39 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    name: Trigger Amplify build
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Trigger Amplify build
+        run: |
+          APP_ID=$(aws amplify list-apps --query "apps[?name=='mylife'].appId" --output text)
+          aws amplify start-job \
+            --app-id "$APP_ID" \
+            --branch-name main \
+            --job-type RELEASE \
+            --region $AWS_REGION
+          echo "Amplify build triggered for app $APP_ID"

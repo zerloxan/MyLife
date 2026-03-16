@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python -c \"from app.main import app; print\\(''Backend imports OK''\\)\")",
+      "Bash(cmd /c \"taskkill /PID 14280 /F\")",
+      "Bash(curl -s http://localhost:8001/api/weather/current)",
+      "Bash(python -m json.tool)",
+      "Bash(python -c \":*)",
+      "Bash(cmd /c \"taskkill /PID 1668 /F\")",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

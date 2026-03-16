@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored — never commit it.
+
+aws_region  = "us-east-1"
+app_name    = "mylife"
+github_repo = "YOUR_GITHUB_USERNAME/MyLife"
+
+# API keys (can be left blank to use mock data)
+football_data_api_key  = ""
+openweathermap_api_key = ""
+strava_client_id       = ""
+strava_client_secret   = ""
+
+# GitHub personal access token (repo scope) for Amplify
+# Create at: github.com/settings/tokens
+github_token = ""
