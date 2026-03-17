@@ -1,17 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "export",  // Static HTML export for S3 hosting
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "openweathermap.org" },
-    ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/:path*`,
-      },
-    ];
+    unoptimized: true,  // Required for static export (no Next.js image server)
   },
 };
 

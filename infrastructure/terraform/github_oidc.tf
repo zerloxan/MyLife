@@ -64,11 +64,22 @@ resource "aws_iam_role_policy" "github_actions_deploy" {
         Action   = ["lambda:UpdateFunctionCode", "lambda:GetFunction", "lambda:GetFunctionConfiguration"]
         Resource = aws_lambda_function.backend.arn
       },
+      # S3 — sync built frontend files
       {
         Effect   = "Allow"
-        Action   = ["amplify:StartJob", "amplify:ListApps", "amplify:GetApp"]
-        Resource = "*"
+        Action   = ["s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+        Resource = [
+          aws_s3_bucket.frontend.arn,
+          "${aws_s3_bucket.frontend.arn}/*",
+        ]
       },
+      # CloudFront — invalidate cache after deploy
+      {
+        Effect   = "Allow"
+        Action   = ["cloudfront:CreateInvalidation"]
+        Resource = aws_cloudfront_distribution.frontend.arn
+      },
+      # API Gateway — read endpoint URL for smoke test
       {
         Effect   = "Allow"
         Action   = ["apigateway:GET"]

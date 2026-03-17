@@ -23,11 +23,6 @@ output "cognito_hosted_ui_url" {
   value       = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com/login?client_id=${aws_cognito_user_pool_client.frontend.id}&response_type=token&scope=openid+email&redirect_uri=http://localhost:3000"
 }
 
-output "amplify_app_url" {
-  description = "Public URL of the deployed frontend"
-  value       = "https://main.${aws_amplify_app.frontend.id}.amplifyapp.com"
-}
-
 output "dynamodb_table_name" {
   description = "DynamoDB table name"
   value       = aws_dynamodb_table.main.name

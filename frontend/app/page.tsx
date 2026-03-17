@@ -1,4 +1,6 @@
-import { Suspense } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import WeatherWidget from "@/components/widgets/WeatherWidget";
 import StravaWidget from "@/components/widgets/StravaWidget";
@@ -6,38 +8,27 @@ import SoccerClientWrapper from "@/components/widgets/SoccerClientWrapper";
 import WeatherSkeleton from "@/components/skeletons/WeatherSkeleton";
 import SoccerSkeleton from "@/components/skeletons/SoccerSkeleton";
 import StravaSkeleton from "@/components/skeletons/StravaSkeleton";
+import type { WeatherData, SoccerData, StravaData } from "@/types";
 
-// Each of these async components fetches independently —
-// a slow/failing widget won't block the rest of the page.
+type State<T> = { data: T | null; error: boolean };
 
-async function WeatherSection() {
-  try {
-    const data = await api.weather();
-    return <WeatherWidget data={data} />;
-  } catch {
-    return <ErrorCard title="Weather" />;
-  }
-}
+function useWidget<T>(fetcher: () => Promise<T>): State<T> & { loading: boolean } {
+  const [state, setState] = useState<State<T>>({ data: null, error: false });
 
-async function StravaSection() {
-  try {
-    const data = await api.strava();
-    return <StravaWidget data={data} />;
-  } catch {
-    return <ErrorCard title="Strava" />;
-  }
-}
+  useEffect(() => {
+    fetcher()
+      .then((data) => setState({ data, error: false }))
+      .catch(() => setState({ data: null, error: true }));
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
-async function SoccerSection() {
-  try {
-    const data = await api.soccer();
-    return <SoccerClientWrapper initialData={data} />;
-  } catch {
-    return <ErrorCard title="Soccer" />;
-  }
+  return { ...state, loading: state.data === null && !state.error };
 }
 
 export default function Dashboard() {
+  const weather = useWidget<WeatherData>(api.weather);
+  const soccer  = useWidget<SoccerData>(api.soccer);
+  const strava  = useWidget<StravaData>(api.strava);
+
   const now = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
@@ -53,18 +44,18 @@ export default function Dashboard() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="md:col-span-2">
-          <Suspense fallback={<WeatherSkeleton />}>
-            <WeatherSection />
-          </Suspense>
+          {weather.loading ? <WeatherSkeleton /> :
+           weather.error   ? <ErrorCard title="Weather" /> :
+           <WeatherWidget data={weather.data!} />}
         </div>
 
-        <Suspense fallback={<SoccerSkeleton />}>
-          <SoccerSection />
-        </Suspense>
+        {soccer.loading ? <SoccerSkeleton /> :
+         soccer.error   ? <ErrorCard title="Soccer" /> :
+         <SoccerClientWrapper initialData={soccer.data!} />}
 
-        <Suspense fallback={<StravaSkeleton />}>
-          <StravaSection />
-        </Suspense>
+        {strava.loading ? <StravaSkeleton /> :
+         strava.error   ? <ErrorCard title="Strava" /> :
+         <StravaWidget data={strava.data!} />}
       </div>
     </main>
   );

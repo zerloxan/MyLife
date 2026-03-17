@@ -40,10 +40,16 @@ jobs:
           REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
-          docker tag  $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $REGISTRY/$ECR_REPOSITORY:latest
-          docker push $REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $REGISTRY/$ECR_REPOSITORY:latest
+          docker buildx build \
+            --platform linux/amd64 \
+            --provenance=false \
+            --output type=image,name=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG,push=true \
+            ./backend
+          docker buildx build \
+            --platform linux/amd64 \
+            --provenance=false \
+            --output type=image,name=$REGISTRY/$ECR_REPOSITORY:latest,push=true \
+            ./backend
           echo "image=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Update Lambda function image

@@ -42,3 +42,6 @@ Thumbs.db
 
 # AWS
 .aws/
+
+# Secrets
+secrets.env.example
