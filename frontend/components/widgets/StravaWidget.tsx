@@ -1,4 +1,5 @@
 import { StravaData, Activity } from "@/types";
+import { initiateOAuth } from "@/lib/strava-api";
 
 function ActivityRow({ activity }: { activity: Activity }) {
   const date = new Date(activity.date).toLocaleDateString([], { month: "short", day: "numeric" });
@@ -29,12 +30,12 @@ export default function StravaWidget({ data }: { data: StravaData }) {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-200">Strava</h2>
         {!isConnected && (
-          <a
-            href="/api/strava/connect"
+          <button
+            onClick={() => initiateOAuth()}
             className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-full font-medium transition"
           >
             Connect
-          </a>
+          </button>
         )}
       </div>
 

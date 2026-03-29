@@ -1,8 +1,12 @@
 /** @type {import('next').NextConfig} */
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 const nextConfig = {
-  output: "export",  // Static HTML export for S3 hosting
+  output: "export",
+  basePath,
+  assetPrefix: basePath,
   images: {
-    unoptimized: true,  // Required for static export (no Next.js image server)
+    unoptimized: true,
   },
 };
 
