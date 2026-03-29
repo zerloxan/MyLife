@@ -10,8 +10,6 @@ interface FootballMatch {
   utcDate: string;
 }
 
-const BASE_URL = "https://api.football-data.org/v4";
-
 const LEAGUE_NAMES: Record<string, string> = {
   PL: "Premier League",
   PD: "La Liga",
@@ -28,20 +26,22 @@ function formatDate(offsetDays: number): string {
   return d.toISOString().split("T")[0];
 }
 
-export async function getSoccerScores(): Promise<SoccerData> {
-  const key = process.env.NEXT_PUBLIC_FOOTBALL_API_KEY;
-  if (!key) throw new Error("NEXT_PUBLIC_FOOTBALL_API_KEY is not set");
+function getWorkerBase(): string {
+  const url = process.env.NEXT_PUBLIC_STRAVA_WORKER_URL;
+  if (!url) throw new Error("NEXT_PUBLIC_STRAVA_WORKER_URL is not set");
+  return url.replace(/\/$/, "");
+}
 
+export async function getSoccerScores(): Promise<SoccerData> {
+  const workerBase = getWorkerBase();
   const dateFrom = formatDate(-3);
   const dateTo = formatDate(7);
-  const headers = { "X-Auth-Token": key };
 
   const results = await Promise.all(
     LEAGUES.map(async (code) => {
       try {
         const res = await fetch(
-          `${BASE_URL}/competitions/${code}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`,
-          { headers }
+          `${workerBase}/soccer/competitions/${code}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`
         );
         if (!res.ok) throw new Error(`${res.status}`);
         const data = await res.json();

@@ -1,16 +1,18 @@
 export interface Env {
   STRAVA_CLIENT_ID: string;
   STRAVA_CLIENT_SECRET: string;
+  FOOTBALL_API_KEY: string;
   ALLOWED_ORIGIN: string;
 }
 
 const TOKEN_URL = "https://www.strava.com/oauth/token";
+const FOOTBALL_BASE = "https://api.football-data.org/v4";
 
 function corsHeaders(origin: string, allowedOrigin: string): HeadersInit {
   const allow = origin === allowedOrigin ? origin : allowedOrigin;
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
@@ -25,7 +27,7 @@ async function exchangeWithStrava(body: Record<string, string>, env: Env): Promi
       ...body,
     }),
   });
-  const data = await res.json() as any;
+  const data = await res.json() as Record<string, unknown>;
   if (!res.ok) return new Response(JSON.stringify({ error: data }), { status: res.status });
   return new Response(
     JSON.stringify({
@@ -35,6 +37,20 @@ async function exchangeWithStrava(body: Record<string, string>, env: Env): Promi
     }),
     { status: 200 }
   );
+}
+
+async function proxySoccer(url: URL, env: Env): Promise<Response> {
+  // Strip the leading /soccer prefix and forward the rest to football-data.org
+  const apiPath = url.pathname.replace(/^\/soccer/, "");
+  const apiUrl = `${FOOTBALL_BASE}${apiPath}${url.search}`;
+  const res = await fetch(apiUrl, {
+    headers: { "X-Auth-Token": env.FOOTBALL_API_KEY },
+  });
+  const body = await res.text();
+  return new Response(body, {
+    status: res.status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 export default {
@@ -48,6 +64,20 @@ export default {
       return new Response(null, { status: 204, headers: cors });
     }
 
+    // Soccer proxy (GET)
+    if (url.pathname.startsWith("/soccer/")) {
+      if (request.method !== "GET") {
+        return new Response("Method not allowed", { status: 405, headers: cors });
+      }
+      const dataRes = await proxySoccer(url, env);
+      const body = await dataRes.text();
+      return new Response(body, {
+        status: dataRes.status,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Strava OAuth (POST)
     if (request.method !== "POST") {
       return new Response("Method not allowed", { status: 405, headers: cors });
     }
@@ -71,7 +101,6 @@ export default {
       return new Response("Not found", { status: 404, headers: cors });
     }
 
-    // Attach CORS headers to the response from Strava exchange
     const responseBody = await dataRes.text();
     return new Response(responseBody, {
       status: dataRes.status,
