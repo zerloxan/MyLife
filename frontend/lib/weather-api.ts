@@ -1,5 +1,11 @@
 import type { WeatherData } from "@/types";
 
+interface OWMForecastItem {
+  dt: number;
+  main: { temp_min: number; temp_max: number };
+  weather: Array<{ description: string; icon: string }>;
+}
+
 const BASE_URL = "https://api.openweathermap.org/data/2.5";
 const LAT = 41.762;
 const LON = -72.7396;
@@ -38,10 +44,10 @@ export async function getWeather(): Promise<WeatherData> {
       wind_speed: Math.round(current.wind.speed),
       city: current.name,
     },
-    forecast: (forecast.list as any[])
-      .filter((_: any, i: number) => i % 8 === 0)
+    forecast: (forecast.list as OWMForecastItem[])
+      .filter((_: OWMForecastItem, i: number) => i % 8 === 0)
       .slice(0, 5)
-      .map((item: any) => ({
+      .map((item: OWMForecastItem) => ({
         dt: item.dt,
         temp_min: Math.round(item.main.temp_min),
         temp_max: Math.round(item.main.temp_max),

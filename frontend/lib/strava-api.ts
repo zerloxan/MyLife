@@ -1,5 +1,17 @@
 import type { StravaData } from "@/types";
 
+interface StravaActivity {
+  id: number;
+  name: string;
+  type: string;
+  start_date_local: string;
+  distance: number;
+  moving_time: number;
+  total_elevation_gain: number;
+  average_heartrate?: number;
+  max_heartrate?: number;
+}
+
 const STRAVA_BASE = "https://www.strava.com/api/v3";
 const TOKEN_KEY = "strava_access_token";
 const REFRESH_KEY = "strava_refresh_token";
@@ -128,7 +140,7 @@ export async function getStravaData(): Promise<StravaData> {
       count: stats.ytd_run_totals.count,
       distance_miles: Math.round(stats.ytd_run_totals.distance * 0.000621371 * 10) / 10,
     },
-    recent_activities: activities.slice(0, 5).map((a: any) => ({
+    recent_activities: (activities as StravaActivity[]).slice(0, 5).map((a: StravaActivity) => ({
       id: a.id,
       name: a.name,
       type: a.type,

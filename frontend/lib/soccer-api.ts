@@ -1,5 +1,15 @@
 import type { SoccerData } from "@/types";
 
+interface FootballMatch {
+  id: number;
+  homeTeam?: { shortName?: string };
+  awayTeam?: { shortName?: string };
+  score?: { fullTime?: { home?: number | null; away?: number | null } };
+  status: string;
+  minute?: number | null;
+  utcDate: string;
+}
+
 const BASE_URL = "https://api.football-data.org/v4";
 
 const LEAGUE_NAMES: Record<string, string> = {
@@ -38,7 +48,7 @@ export async function getSoccerScores(): Promise<SoccerData> {
         return {
           league: LEAGUE_NAMES[code] ?? code,
           code,
-          matches: (data.matches ?? []).map((m: any) => ({
+          matches: (data.matches as FootballMatch[] ?? []).map((m: FootballMatch) => ({
             id: m.id,
             home: m.homeTeam?.shortName ?? "Unknown",
             away: m.awayTeam?.shortName ?? "Unknown",
