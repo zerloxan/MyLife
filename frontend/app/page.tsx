@@ -20,7 +20,7 @@ function useWidget<T>(fetcher: () => Promise<T>, ready = true): State<T> & { loa
     if (!ready) return;
     fetcher()
       .then((data) => setState({ data, error: false }))
-      .catch(() => setState({ data: null, error: true }));
+      .catch((err) => { console.error(err); setState({ data: null, error: true }); });
   }, [ready]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   return { ...state, loading: state.data === null && !state.error };
