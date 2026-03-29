@@ -54,7 +54,7 @@ export async function getSoccerScores(): Promise<SoccerData> {
             away: m.awayTeam?.shortName ?? "Unknown",
             home_score: m.score?.fullTime?.home ?? null,
             away_score: m.score?.fullTime?.away ?? null,
-            status: m.status,
+            status: m.status as import("@/types").Match["status"],
             minute: m.minute ?? null,
             utc_date: m.utcDate,
           })),
